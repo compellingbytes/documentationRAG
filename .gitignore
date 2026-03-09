@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+
+# Data files (too large for git)
+*.pkl
+*.npy
+*.bin
+*.jsonl
+*.db
+chroma_db/
+data/
+index/
+
+# Archives and experiments
+archival/
+old/
+
+# Environment
+.env
+venv/
+env/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
