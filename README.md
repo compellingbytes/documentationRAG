@@ -1,5 +1,7 @@
 # documentationRag
 
+#### built iteratively with LLM assistance
+
 A modular, FAISS‑based RAG pipeline for technical documentation.  
 Built to benchmark cheap GPUs (P102‑100, RX 6700, at least initially) but should work on anything.
 
@@ -54,6 +56,27 @@ python embed_chunks_jsonl.py ../chunks.jsonl ../index
 cd ../retrieval
 python rag_llm_integration.py
 ```
+
+## `rag_llm_integration.py` initialization:
+
+## Query Modes
+
+The RAG script supports three generation modes, controlled by the first command-line argument:
+
+| Mode | Behavior |
+|------|----------|
+| `default` | Use retrieved documents first, fall back to model knowledge if needed |
+| `corrective` | Compare documents against model knowledge, correct errors in the docs |
+| `override` | Trust model knowledge over documents when they conflict |
+
+**Example usage:**
+```bash
+# Run all test queries in corrective mode
+python rag_llm_integration.py corrective
+
+# Run in default mode (or omit the argument)
+python rag_llm_integration.py default
+If no mode is specified, the script defaults to default.
 
 ---
 
