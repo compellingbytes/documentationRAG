@@ -164,7 +164,7 @@ Provide complete, usable commands when applicable."""
         # 4. Send to LLM
         payload = {
             "prompt": prompt,
-            "n_predict": 800,
+            "n_predict": 1800,
             "temperature": 0.1,
             "top_p": 0.9,
             "stop": ["</s>", "Question:", "Excerpt", "\n\n\n"],
