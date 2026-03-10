@@ -46,9 +46,6 @@ def detect_project(query):
 
     return None
 
-    # Set mode from command line, default to "default"
-    mode = sys.argv[1] if len(sys.argv) > 1 else "default"
-
 
 class FixedRAG:
     def __init__(self):
@@ -198,7 +195,7 @@ Provide complete, usable commands when applicable."""
         sys.stdout.write("\r" + " " * 80 + "\r")
         sys.stdout.flush()
 
-    def test_all(self):
+    def test_all(self, mode="default"):
         """Test the fixed system"""
         test_queries = [
             "How do I run a podman container in rootless mode?",
@@ -208,11 +205,15 @@ Provide complete, usable commands when applicable."""
         ]
 
         for query in test_queries:
-            self.query(query)
+            self.query(query, mode=mode)
             if query != test_queries[-1]:
                 input("\nPress Enter for the next query...")
 
 
 if __name__ == "__main__":
+    # Set mode from command line, default to "default"
+    mode = sys.argv[1] if len(sys.argv) > 1 else "default"
+    print(f"🔧 Using mode: {mode}")
+
     rag = FixedRAG()
-    rag.test_all()
+    rag.test_all(mode=mode)
