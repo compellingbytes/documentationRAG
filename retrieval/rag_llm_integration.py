@@ -46,6 +46,9 @@ def detect_project(query):
 
     return None
 
+    # Set mode from command line, default to "default"
+    mode = sys.argv[1] if len(sys.argv) > 1 else "default"
+
 
 class FixedRAG:
     def __init__(self):
@@ -83,9 +86,10 @@ class FixedRAG:
         sys.stdout.write(status)
         sys.stdout.flush()
 
-    def query(self, question, k=12):
+    def query(self, question, k=12, mode="default"):
         print("\n" + "─" * 58)
         print(f"🔍 QUERY: {question}")
+        print(f"📌 MODE: {mode}")
         print("─" * 58)
         project = detect_project(question)
 
@@ -97,7 +101,9 @@ class FixedRAG:
 
         # 1. Search
         start = time.time()
-        query_vec = self.model.encode([question], device="cpu").astype(np.float32)
+        query_vec = self.model.encode([enhanced_question], device="cpu").astype(
+            np.float32
+        )
         faiss.normalize_L2(query_vec)
         distances, indices = self.index.search(query_vec, k)
         search_time = time.time() - start
@@ -123,21 +129,37 @@ class FixedRAG:
 
         context = "\n".join(context_parts)
 
-        # 3. Fixed prompt
-        prompt = f"""<|im_start|>system
-You are a technical documentation assistant. Use the provided document excerpts to answer questions.
-If the documents contain the answer, quote or summarize from them.
+        # Choose prompt based on mode
+        if mode == "default":
+            system = """You are a technical documentation assistant. Use the provided document excerpts to answer questions.
+If the documents contain the answer, quote or summarize from them. Synthesize a coherent, concise response.
 If not, use your knowledge but clarify what comes from documents vs your knowledge.
-Provide complete, usable commands when applicable.<|im_end|>
+Provide complete, usable commands when applicable."""
 
-<|im_start|>user
-DOCUMENT EXCERPTS:
-{context}
+        elif mode == "corrective":
+            system = """You are a technical documentation assistant with strong technical knowledge.
+            Use the provided document excerpts first, but compare them against your own knowledge.
+            If the documents contain errors or omit important details, correct them in your answer. Synthesize a coherent, concise response.
+            Explain what came from docs vs. what you corrected based on your knowledge."""
 
-QUESTION: {question}<|im_end|>
+        elif mode == "override":
+            system = """You are a technical documentation assistant with strong technical knowledge.
+            Your knowledge takes precedence over the provided documents. Synthesize a coherent, concise response.
+            Use the documents as reference, but if they conflict with your knowledge, trust yourself.
+            Explain when you're overriding the documents with your own knowledge."""
 
-<|im_start|>assistant
-"""
+        else:
+            system = "You are a helpful assistant."
+
+        prompt = f"""<|im_start|>system {system}<|im_end>
+        <|im_start|>user
+        DOCUMENT EXCERPTS:
+        {context}
+        QUESTION: {question}<|im_end|>
+        <|im_start|>assistant
+        """
+
+        # Rest of method (token counting, LLM call) unchanged
 
         context_tokens = int(len(context.split()) * 1.3)  # rough estimate
         self.update_status_bar(context_tokens)
@@ -145,10 +167,10 @@ QUESTION: {question}<|im_end|>
         # 4. Send to LLM
         payload = {
             "prompt": prompt,
-            "n_predict": 400,
+            "n_predict": 800,
             "temperature": 0.1,
             "top_p": 0.9,
-            "stop": ["</s>", "Question:", "Excerpt", "---", "\n\n\n"],
+            "stop": ["</s>", "Question:", "Excerpt", "\n\n\n"],
         }
 
         print(f"🤖 Querying LLM...")
@@ -156,7 +178,7 @@ QUESTION: {question}<|im_end|>
 
         try:
             response = requests.post(
-                "http://localhost:8080/completion", json=payload, timeout=60
+                "http://localhost:8080/completion", json=payload, timeout=120
             )
             answer = response.json()["content"].strip()
             llm_time = time.time() - llm_start
@@ -180,15 +202,15 @@ QUESTION: {question}<|im_end|>
         """Test the fixed system"""
         test_queries = [
             "How do I run a podman container in rootless mode?",
-            "What is the difference between systemd service and socket?",
-            "How to convert video to mp4 with ffmpeg?",
-            "What CUDA architecture is compatible with Pascal GPU?",
+            "What is the difference between a systemd service and socket?",
+            "How do you convert a .mov video to .mp4 (h.264 codec) with ffmpeg?",
+            "What CUDA version is compatible with a Pascal GPU?",
         ]
 
         for query in test_queries:
             self.query(query)
             if query != test_queries[-1]:
-                input("\nPress Enter for next query...")
+                input("\nPress Enter for the next query...")
 
 
 if __name__ == "__main__":
