@@ -27,6 +27,11 @@ ENV/
 pip-log.txt
 pip-delete-this-directory.txt
 
+# Response files
+rag_response_*.txt
+rag_session_*.txt
+responses/
+
 # IDE
 .vscode/
 .idea/

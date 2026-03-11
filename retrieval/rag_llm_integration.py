@@ -9,6 +9,7 @@ import pickle
 import re
 import sys
 import time
+from datetime import datetime
 
 import faiss
 import numpy as np
@@ -84,7 +85,7 @@ class FixedRAG:
         sys.stdout.write(status)
         sys.stdout.flush()
 
-    def query(self, question, k=12, mode="default"):
+    def query(self, question, k=12, mode="default", output_file=None):
         print("\n" + "─" * 58)
         print(f"🔍 QUERY: {question}")
         print(f"📌 MODE: {mode}")
@@ -204,13 +205,39 @@ Provide complete, usable commands when applicable."""
                             obj = json.loads(chunk)
                             token = obj.get("content", "")
                             if token:
-                                print(token, end="", flush=True)
+                                # print(token, end="", flush=True)
                                 full_response.append(token)
                         except json.JSONDecodeError:
                             pass
 
-                print()  # Final Newline
+                # Strip thinking tags if they appear
+                full_text = "".join(full_response)
+                if "<think>" in full_text:
+                    # Extract only the part after </think>
+                    parts = full_text.split("</think>")
+                    if len(parts) > 1:
+                        clean_text = parts[-1].strip()
+                    else:
+                        clean_text = (
+                            full_text.replace("<think>", "")
+                            .replace("</think>", "")
+                            .strip()
+                        )
+                else:
+                    clean_text = full_text
+
                 llm_time = time.time() - llm_start
+
+                print(clean_text)
+
+                if output_file:
+                    with open(output_file, "a") as f:
+                        f.write(f"QUERY: {question}\n")
+                        f.write(f"TIME: {llm_time:.1f}s\n")
+                        f.write("-" * 40 + "\n")
+                        f.write(clean_text)
+                        f.write("\n\n" + "=" * 60 + "\n\n")
+                print()  # Final Newline
                 print(f"\n⚡ LLM: {llm_time:.1f}s")
                 print("--" * 58)
                 print("✅ Query complete. Ready for the next one.")
@@ -223,6 +250,14 @@ Provide complete, usable commands when applicable."""
             print("─" * 58 + "\n")
 
     def test_all(self, mode="default"):
+        run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_file = f"rag_run_{run_timestamp}.txt"
+
+        with open(output_file, "w") as f:
+            f.write(f"RAG Test Run - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Mode: {mode}\n")
+            f.write("=" * 60 + "\n\n")
+
         """Test the fixed system"""
         test_queries = [
             "How do I run a podman container in rootless mode?",
