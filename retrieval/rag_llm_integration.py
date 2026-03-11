@@ -168,32 +168,58 @@ Provide complete, usable commands when applicable."""
             "temperature": 0.1,
             "top_p": 0.9,
             "stop": ["</s>", "Question:", "Excerpt", "\n\n\n"],
+            "stream": True,
         }
 
         print(f"🤖 Querying LLM...")
         llm_start = time.time()
 
-        try:
-            response = requests.post(
-                "http://localhost:8080/completion", json=payload, timeout=120
-            )
-            answer = response.json()["content"].strip()
-            llm_time = time.time() - llm_start
+        # Set timeout based on mode (BEFORE the request)
+        if mode == "override":
+            timeout = 180
+        elif mode == "corrective":
+            timeout = 150
+        else:
+            timeout = 120
 
-            print(f"⚡ LLM: {llm_time:.1f}s")
-            print(f"\n💬 Answer:")
-            print("-" * 50)
-            print(answer)
-            print("-" * 50)
+        try:
+            full_response = []
+            with requests.post(
+                "http://localhost:8080/completion",
+                json=payload,
+                stream=True,
+                timeout=timeout,
+            ) as response:
+                response.raise_for_status()
+
+                for line in response.iter_lines(decode_unicode=True):
+                    if not line:
+                        continue
+                    if line.startswith("data: "):
+                        chunk = line[len("data: ") :]
+                        if chunk == "[DONE]":
+                            break
+                        try:
+                            obj = json.loads(chunk)
+                            token = obj.get("content", "")
+                            if token:
+                                print(token, end="", flush=True)
+                                full_response.append(token)
+                        except json.JSONDecodeError:
+                            pass
+
+                print()  # Final Newline
+                llm_time = time.time() - llm_start
+                print(f"\n⚡ LLM: {llm_time:.1f}s")
+                print("--" * 58)
+                print("✅ Query complete. Ready for the next one.")
+                print("--" * 58 + "\n")
 
         except Exception as e:
             print(f"❌ Error: {e}")
-
-        print("─" * 58)
-        print("✅ Query complete. Ready for next.")
-        print("─" * 58 + "\n")
-        sys.stdout.write("\r" + " " * 80 + "\r")
-        sys.stdout.flush()
+            print("─" * 58)
+            print("✅ Query complete. Ready for next.")
+            print("─" * 58 + "\n")
 
     def test_all(self, mode="default"):
         """Test the fixed system"""
