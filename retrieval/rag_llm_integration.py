@@ -205,40 +205,31 @@ Provide complete, usable commands when applicable."""
                             obj = json.loads(chunk)
                             token = obj.get("content", "")
                             if token:
-                                # print(token, end="", flush=True)
+                                print(token, end="", flush=True)  # ← streaming only
                                 full_response.append(token)
                         except json.JSONDecodeError:
                             pass
 
-                # Strip thinking tags if they appear
-                full_text = "".join(full_response)
-                if "<think>" in full_text:
-                    # Extract only the part after </think>
-                    parts = full_text.split("</think>")
-                    if len(parts) > 1:
-                        clean_text = parts[-1].strip()
-                    else:
-                        clean_text = (
-                            full_text.replace("<think>", "")
-                            .replace("</think>", "")
-                            .strip()
-                        )
-                else:
-                    clean_text = full_text
+                # Done streaming — just a newline
+                print()
 
                 llm_time = time.time() - llm_start
-
-                print(clean_text)
+                print(f"\n⚡ LLM: {llm_time:.1f}s")
 
                 if output_file:
+                    full_text = "".join(full_response)
                     with open(output_file, "a") as f:
                         f.write(f"QUERY: {question}\n")
-                        f.write(f"TIME: {llm_time:.1f}s\n")
+                        f.write(f"SEARCH: {search_time * 1000:.0f}ms\n")  # ← add this
+                        f.write(f"LLM: {llm_time:.1f}s\n")
+                        f.write(
+                            f"CONTEXT: {context_tokens}/{self.max_context} tokens\n"
+                        )  # optional
                         f.write("-" * 40 + "\n")
-                        f.write(clean_text)
+                        f.write(full_text)
                         f.write("\n\n" + "=" * 60 + "\n\n")
+
                 print()  # Final Newline
-                print(f"\n⚡ LLM: {llm_time:.1f}s")
                 print("--" * 58)
                 print("✅ Query complete. Ready for the next one.")
                 print("--" * 58 + "\n")
@@ -267,7 +258,7 @@ Provide complete, usable commands when applicable."""
         ]
 
         for query in test_queries:
-            self.query(query, mode=mode)
+            self.query(query, mode=mode, output_file=output_file)
             if query != test_queries[-1]:
                 input("\nPress Enter for the next query...")
 
