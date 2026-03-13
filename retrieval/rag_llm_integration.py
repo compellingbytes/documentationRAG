@@ -132,7 +132,8 @@ class FixedRAG:
         if mode == "default":
             system = """You are a technical documentation assistant. Use the provided document excerpts to answer questions.
 If the documents contain the answer, quote or summarize from them. Synthesize a coherent, concise response.
-If not, use your knowledge but clarify what comes from documents vs your knowledge.
+If the documentation does not return any information related to the question, say you do not know the answer.
+Cite where in the documentation you got the information.
 Provide complete, usable commands when applicable."""
 
         elif mode == "corrective":
@@ -254,7 +255,7 @@ Provide complete, usable commands when applicable."""
             "How do I run a podman container in rootless mode?",
             "What is the difference between a systemd service and socket?",
             "How do you convert a .mov video to .mp4 (h.264 codec) with ffmpeg?",
-            "What CUDA version is compatible with a Pascal GPU?",
+            "What is the latest CUDA version that's compatible with a Pascal GPU?",
         ]
 
         for query in test_queries:
