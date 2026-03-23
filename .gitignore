@@ -26,12 +26,13 @@ ENV/
 .venv
 pip-log.txt
 pip-delete-this-directory.txt
+faiss_index*.json
 
 # Response files
 rag_response_*.txt
 rag_session_*.txt
 responses/
-
+rag_run_*.txt
 # IDE
 .vscode/
 .idea/

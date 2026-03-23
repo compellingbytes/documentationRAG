@@ -253,9 +253,13 @@ Provide complete, usable commands when applicable."""
         """Test the fixed system"""
         test_queries = [
             "How do I run a podman container in rootless mode?",
-            "What is the difference between a systemd service and socket?",
-            "How do you convert a .mov video to .mp4 (h.264 codec) with ffmpeg?",
-            "What is the latest CUDA version that's compatible with a Pascal GPU?",
+            "What is the difference between systemd service and socket?",
+            "How to convert video to mp4 with ffmpeg?",
+            "What CUDA architecture is compatible with Pascal GPU?",
+            # "How do I run a podman container in rootless mode?",
+            # "What is the difference between a systemd service and socket?",
+            # "How do you convert a .mov video to .mp4 (h.264 codec) with ffmpeg?",
+            # "What is the latest CUDA version that's compatible with a Pascal GPU?",
         ]
 
         for query in test_queries:
